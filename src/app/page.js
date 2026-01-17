@@ -2,15 +2,18 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LandingPage from '@/components/LandingPage';
 
+import { getDb } from "@/lib/db";
+
 async function getTrendingItems() {
   try {
-    // In a real app, you might add a ?limit=4 query param
-    const res = await fetch('http://localhost:4000/items', {
-      next: { revalidate: 60 }
-    });
-    if (!res.ok) return [];
-    const items = await res.json();
-    return items.slice(0, 4); // Just show top 4
+    const db = await getDb();
+    // Fetch top 4 items
+    const items = await db.collection("products").find({}).limit(4).toArray();
+
+    return items.map(item => ({
+      ...item,
+      id: item._id.toString()
+    }));
   } catch (error) {
     console.error("Failed to fetch trending items", error);
     return [];

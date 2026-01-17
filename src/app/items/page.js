@@ -40,8 +40,7 @@ export default async function ItemsPage() {
         {items.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-gray-500 text-lg">
-              No items found. Make sure the backend server (port 4000) is
-              running.
+              No items found. expecting new arrivals soon.
             </p>
           </div>
         ) : (

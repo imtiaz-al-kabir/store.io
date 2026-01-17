@@ -21,21 +21,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Check hardcoded credentials first
         if (credentials.email === MOCK_EMAIL && credentials.password === MOCK_PASSWORD) {
-          // Store mock user in database if not exists
-          try {
-            await fetch("http://localhost:4000/save-oauth-user", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                name: "Admin User",
-                email: MOCK_EMAIL,
-                provider: "mock",
-              }),
-            });
-          } catch (error) {
-            console.error("Error saving mock user:", error);
-          }
-
           return {
             id: "mock-user-1",
             name: "Admin User",
@@ -45,32 +30,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Fallback: Try database authentication
         try {
-          console.log("Attempting login via backend:", "http://localhost:4000/login");
-          const res = await fetch("http://localhost:4000/login", {
-            method: "POST",
-            body: JSON.stringify(credentials),
-            headers: { "Content-Type": "application/json" },
-          });
+          const { getDb } = await import("@/lib/db");
+          const bcrypt = (await import("bcryptjs")).default;
 
-          if (!res.ok) {
-            const errorText = await res.text();
-            console.error("Backend login failed:", res.status, errorText);
-            throw new Error(`Backend Error: ${res.status}`);
+          const db = await getDb();
+          const user = await db.collection("users").findOne({ email: credentials.email });
+
+          if (!user) {
+            throw new Error("Invalid credentials");
           }
 
-          const user = await res.json();
-
-          // If no error and we have user data, return it
-          if (user) {
-            return user;
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isValid) {
+            throw new Error("Invalid credentials");
           }
-          return null;
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email
+          };
+
         } catch (e) {
-          console.error("Authorize Error:", e.message);
-          // If connection refused, it means backend is down
-          if (e.message.includes("fetch failed") || e.message.includes("ECONNREFUSED")) {
-            throw new Error("Backend server unreachable. Make sure 'node server/server.js' is running.");
-          }
+          console.error("Auth Error:", e.message);
           return null;
         }
       },

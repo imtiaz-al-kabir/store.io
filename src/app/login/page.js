@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import { authenticate } from '@/app/actions/auth-actions';
-import { signIn } from 'next-auth/react'; // For client-side Google sign-in
+import { signIn } from 'next-auth/react'; 
 import Link from 'next/link';
 
 export default function LoginPage() {
